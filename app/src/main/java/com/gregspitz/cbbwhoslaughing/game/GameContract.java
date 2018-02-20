@@ -2,6 +2,7 @@ package com.gregspitz.cbbwhoslaughing.game;
 
 import com.gregspitz.cbbwhoslaughing.BasePresenter;
 import com.gregspitz.cbbwhoslaughing.BaseView;
+import com.gregspitz.cbbwhoslaughing.game.domain.model.Game;
 import com.gregspitz.cbbwhoslaughing.game.domain.model.Laugher;
 
 /**
@@ -11,6 +12,7 @@ import com.gregspitz.cbbwhoslaughing.game.domain.model.Laugher;
 public interface GameContract {
     interface View extends BaseView<Presenter> {
         void setLoadingIndicator(boolean active);
+        void showGame(Game game);
         void showRightAnswer();
         void showWrongAnswer();
         boolean isActive();
