@@ -13,6 +13,7 @@ public interface GameContract {
     interface View extends BaseView<Presenter> {
         void setLoadingIndicator(boolean active);
         void showGame(Game game);
+        void showFailedToLoadGame();
         void showRightAnswer();
         void showWrongAnswer();
         boolean isActive();

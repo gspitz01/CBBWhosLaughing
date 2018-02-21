@@ -96,6 +96,51 @@ public class GamePresenterTest {
         assertTrue(verifyLaughersInGame(mGameArgumentCaptor.getValue()));
     }
 
+    @Test
+    public void startWithoutProperGameLoading_showsFailedToLoadGameInView() {
+        mGamePresenter = setupGamePresenter();
+        mGamePresenter.start();
+
+        verify(mGameRepository).getLaughers(mGetLaughersCallbackCaptor.capture());
+        // Verify loading indicator set
+        InOrder inOrder = inOrder(mGameView);
+        inOrder.verify(mGameView).setLoadingIndicator(true);
+
+        // Trigger callback
+        mGetLaughersCallbackCaptor.getValue().onDataNotAvailable();
+
+        inOrder.verify(mGameView).setLoadingIndicator(false);
+        verify(mGameView).showFailedToLoadGame();
+    }
+
+    @Test
+    public void correctGuees_showsCorrectGuessInView() {
+        mGamePresenter = setupGamePresenter();
+        mGamePresenter.start();
+        verify(mGameRepository).getLaughers(mGetLaughersCallbackCaptor.capture());
+        mGetLaughersCallbackCaptor.getValue().onLaughersLoaded(ALL_LAUGHERS);
+        verify(mGameView).showGame(mGameArgumentCaptor.capture());
+
+        Game createdGame = mGameArgumentCaptor.getValue();
+        mGamePresenter.guessGame(createdGame.getCorrectAnswer());
+
+        verify(mGameView).showRightAnswer();
+    }
+
+    @Test
+    public void wrongGuess_showsWrongAnswerInView() {
+        mGamePresenter = setupGamePresenter();
+        mGamePresenter.start();
+        verify(mGameRepository).getLaughers(mGetLaughersCallbackCaptor.capture());
+        mGetLaughersCallbackCaptor.getValue().onLaughersLoaded(ALL_LAUGHERS);
+        verify(mGameView).showGame(mGameArgumentCaptor.capture());
+
+        Game createdGame = mGameArgumentCaptor.getValue();
+        mGamePresenter.guessGame(createdGame.getWrongAnswers().get(0));
+
+        verify(mGameView).showWrongAnswer();
+    }
+
     private boolean verifyLaughersInGame(Game game) {
         List<Laugher> laughersInGame = new ArrayList<>();
         laughersInGame.add(game.getCorrectAnswer());

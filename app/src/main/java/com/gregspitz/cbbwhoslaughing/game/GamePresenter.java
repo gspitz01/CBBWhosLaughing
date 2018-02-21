@@ -16,6 +16,7 @@ public class GamePresenter implements GameContract.Presenter {
     private final UseCaseHandler mUseCaseHandler;
     private final GameContract.View mGameView;
     private final NewGame mNewGame;
+    private Game mCurrentGame;
 
     public GamePresenter(@NonNull UseCaseHandler useCaseHandler,
             @NonNull GameContract.View gameView,
@@ -40,7 +41,7 @@ public class GamePresenter implements GameContract.Presenter {
 
                     @Override
                     public void onSuccess(NewGame.ResponseValue response) {
-                        Game game = response.getGame();
+                        mCurrentGame = response.getGame();
 
                         // View may not be able to handle UI updates anymore
                         if (!mGameView.isActive()) {
@@ -48,18 +49,25 @@ public class GamePresenter implements GameContract.Presenter {
                         }
 
                         mGameView.setLoadingIndicator(false);
-                        mGameView.showGame(game);
+                        mGameView.showGame(mCurrentGame);
                     }
 
                     @Override
                     public void onError() {
-
+                        if (mGameView.isActive()) {
+                            mGameView.setLoadingIndicator(false);
+                            mGameView.showFailedToLoadGame();
+                        }
                     }
                 });
     }
 
     @Override
     public void guessGame(Laugher laugher) {
-
+        if (laugher == mCurrentGame.getCorrectAnswer()) {
+            mGameView.showRightAnswer();
+        } else {
+            mGameView.showWrongAnswer();
+        }
     }
 }
