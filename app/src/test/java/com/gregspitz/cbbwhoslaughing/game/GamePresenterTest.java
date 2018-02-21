@@ -2,6 +2,7 @@ package com.gregspitz.cbbwhoslaughing.game;
 
 import com.gregspitz.cbbwhoslaughing.UseCaseHandler;
 import com.gregspitz.cbbwhoslaughing.UseCaseScheduler;
+import com.gregspitz.cbbwhoslaughing.data.source.GameDataSource;
 import com.gregspitz.cbbwhoslaughing.data.source.GameRepository;
 import com.gregspitz.cbbwhoslaughing.game.domain.model.Game;
 import com.gregspitz.cbbwhoslaughing.game.domain.model.Laugher;
@@ -9,6 +10,8 @@ import com.gregspitz.cbbwhoslaughing.game.domain.usecase.NewGame;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -17,6 +20,10 @@ import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,12 +37,16 @@ public class GamePresenterTest {
 
     private static final List<Laugher> WRONG_LAUGHERS = new ArrayList<>();
 
+    private static final List<Laugher> ALL_LAUGHERS = new ArrayList<>();
+
     private static final Game GAME = new Game(CORRECT_LAUGHER, WRONG_LAUGHERS);
 
     static {
         WRONG_LAUGHERS.add(new Laugher("2", "Kevin"));
         WRONG_LAUGHERS.add(new Laugher("3", "Art"));
         WRONG_LAUGHERS.add(new Laugher("4", "Tina"));
+        ALL_LAUGHERS.addAll(WRONG_LAUGHERS);
+        ALL_LAUGHERS.add(CORRECT_LAUGHER);
     }
 
     @Mock
@@ -43,6 +54,12 @@ public class GamePresenterTest {
 
     @Mock
     private GameContract.View mGameView;
+
+    @Captor
+    private ArgumentCaptor<GameDataSource.GetLaughersCallback> mGetLaughersCallbackCaptor;
+
+    @Captor
+    private ArgumentCaptor<Game> mGameArgumentCaptor;
 
     private GamePresenter mGamePresenter;
 
@@ -63,21 +80,32 @@ public class GamePresenterTest {
 
     @Test
     public void start_loadsGameIntoView() {
-        // TODO: make this test work
         mGamePresenter = setupGamePresenter();
         mGamePresenter.start();
 
+        verify(mGameRepository).getLaughers(mGetLaughersCallbackCaptor.capture());
         // Verify loading indicator set
         InOrder inOrder = inOrder(mGameView);
         inOrder.verify(mGameView).setLoadingIndicator(true);
 
+        // Trigger callback
+        mGetLaughersCallbackCaptor.getValue().onLaughersLoaded(ALL_LAUGHERS);
+
         inOrder.verify(mGameView).setLoadingIndicator(false);
-        verify(mGameView).showGame(GAME);
+        verify(mGameView).showGame(mGameArgumentCaptor.capture());
+        assertTrue(verifyLaughersInGame(mGameArgumentCaptor.getValue()));
+    }
+
+    private boolean verifyLaughersInGame(Game game) {
+        List<Laugher> laughersInGame = new ArrayList<>();
+        laughersInGame.add(game.getCorrectAnswer());
+        laughersInGame.addAll(game.getWrongAnswers());
+        return laughersInGame.containsAll(ALL_LAUGHERS);
     }
 
     private GamePresenter setupGamePresenter() {
         UseCaseHandler useCaseHandler = new UseCaseHandler(new TestUseCaseScheduler());
         NewGame newGame = new NewGame(mGameRepository);
-        return new GamePresenter(useCaseHandler, mGameView, new NewGame(mGameRepository));
+        return new GamePresenter(useCaseHandler, mGameView, newGame);
     }
 }

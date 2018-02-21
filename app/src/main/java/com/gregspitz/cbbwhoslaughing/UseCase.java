@@ -20,7 +20,7 @@ public abstract class UseCase<Q extends UseCase.RequestValues, P extends UseCase
         return mRequestValues;
     }
 
-    public UseCaseCallback<P> getPUseCaseCallback() {
+    public UseCaseCallback<P> getUseCaseCallback() {
         return mUseCaseCallback;
     }
 
